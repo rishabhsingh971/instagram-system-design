@@ -163,11 +163,13 @@ Feed size for 1 B users = 50KB * 1 B = 50TB
 - We can use round robin technique to distribute requests among app servers. But if a server goes down, a request can be sent to it. 
 - As a workaround we can use heartbeat mechanism in which each server pings the LB at a certain interval to let LB know that it's not down.
 - Since DB and cache servers are also distributed we need load balancers for them. Since they both are user specific, we can use consistent hashing to determine which request should go to which server.
-        Main Load Balancer
-             |
-        App Servers
-             | LB
-        Cache Servers
-     ________|______________
-    | LB                   |
-DB Servers          Image Storage Servers
+        
+```
+                Main Load Balancer
+                     !
+                App Servers
+                    ! LB
+                Cache Servers
+                / LB          \
+        DB Servers          Image Storage Servers
+```
