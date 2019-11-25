@@ -168,7 +168,7 @@ Feed size for 1 B users = 50KB * 1 B = 50TB
                 Main Load Balancer
                      !
                 App Servers
-                    ! LB
+                     ! LB
                 Cache Servers
                 / LB          \
         DB Servers          Image Storage Servers
