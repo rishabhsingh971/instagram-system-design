@@ -39,25 +39,18 @@
 ## Storage
 - Post file storage size per day = 500 M * 500 KB = 250 TB
 - Post file storage for 5 years = 250 TB * 365 * 5 = 500 PB (approx)
-- Posts metadata size per day = 500M * 10 KB = 5 TB
-- Posts metadata size for 5 years = 5 TB * 365 * 5 = 10 PB (approx)
-- User data = 1 B * 10 KB = 10 TB
+- Posts metadata size per day = 500M * 1 KB = 5 GB
+- Posts metadata size for 5 years = 5 GB * 365 * 5 = 10 TB (approx)
+- User data = 1 B * 5 KB = 5 TB
 
-- Since data size is immensely huge, it is impossible to store in a single machine, so we have to shard data and store
+- Since data size is immensely huge, it is impossible to store in a single machine, so we can shard data and store
     - post files(images/videos) in [Hadoop Distributed File System(HDFS)](https://hadoop.apache.org/docs/r1.2.1/hdfs_design.html).
-    - other post data in DB
-        - timestamp
-        - uploader id
-        - likes
-        - comments
-        - views
-        - caption
-        - etc
-    - User data in different tables (static data in one, dynamic data separately)
-        - User (userid,username, first_name, last_name salted_password_hash, phone_number, email, bio, photo)
+    - Other data in DB
+        - User (userid, username, first_name, last_name, salted_password_hash, phone_number, email, bio, photo)
         - Like (user_id, post_id)
         - View (user_id, post_id)
         - Comment (comment_id, comment, post_id, user_id, created_at)
+        - Posts (post_id, timestamp, user_id, caption, file_url)
         - Follow (user_id, follows)
         - LastLogin (user_id, timestamp)
 
@@ -125,11 +118,22 @@ This system should be highly reliable and images should never be lost after uplo
 
 ## Feed
 ### Generation
+#### Approach 1
 1. Get user_ids of all users followed by given user
 2. Get all posts after given timestamp for each user_id
-3. Sort these posts on the basis of recency.
+3. Sort these posts on the basis of recency(say).
 4. Store top 'K' of these in cache.
 5. Return next 'count' number of posts after 'offset' number of posts.
+
+We can improve the time complexity by following steps:
+1. We can continuously generate user's feed using separate servers and store them in user feed table. 
+2. To get a user's feed we can query this table and return the results.
+3. To generate an user's feed, we can query the user feed table to get previously generated feed. Then generate new feed after the previous feed's timestamp.
+
+### Storage
+Number of posts in feed = 50
+Feed size per user = 50 * post_size = 50 * 1KB = 50KB
+Feed size for 1 B users = 50KB * 1 B = 50TB
 
 ### Distribute
 - Pull:
@@ -145,6 +149,25 @@ This system should be highly reliable and images should never be lost after uplo
     - We can use 'Pull' method for large followers users and 'Push' for others.
 
 
+
 ## Cache
-- Files can be cached on CDNs.
-- LRU Cache on app servers can be used for Feeds with the 80/20 rule.
+- As the users are distributed globally and we have to improve our latency we can host files on CDNs.
+- To reduce feeds, post fetch time we can also use cache on app servers for Feeds and posts. LRU can be used as the cache eviction. We can determine the cache size using 80/20 rule which says almost 80% of our traffic comes from 20% of our daily data.
+- Posts metadata cache size = 0.2 * 5TB = 1 TB
+- Feed cache size = 0.2 * 50TB = 10 TB
+- Since cache size is large cache must also be distributed.
+
+
+## Load Balancing
+- We need a load balancer for user requests.
+- We can use round robin technique to distribute requests among app servers. But if a server goes down, a request can be sent to it. 
+- As a workaround we can use heartbeat mechanism in which each server pings the LB at a certain interval to let LB know that it's not down.
+- Since DB and cache servers are also distributed we need load balancers for them. Since they both are user specific, we can use consistent hashing to determine which request should go to which server.
+        Main Load Balancer
+             |
+        App Servers
+             | LB
+        Cache Servers
+     ________|______________
+    | LB                   |
+DB Servers          Image Storage Servers
