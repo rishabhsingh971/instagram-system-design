@@ -83,35 +83,44 @@ This system should be highly reliable and images should never be lost after uplo
 
 ## API
 - signup (username, first_name, last_name salted_password_hash, phone_number, email, bio, photo)
-  - adds user to user table
+    - adds user to user table
 
 - login (username, salted_password_hash)
-  - login and update last login time
+    - login and update last login time
+
+- search_user (search_string, auth_token)
+    - return public user data for given search string (can be searched in user first name, last name and username)
+
+- get_user_by_id(userid, auth_token)
+    - return public user data for given user id
 
 - follow_user(user_id, target_user_id, auth_token)
-  - Add follow data in DB
+    - Add follow data in DB
 
 - add_post (file, caption, user_id, auth_token)
-  - upload file to file storage server
-  - add other post data to posts table
+    - upload file to file storage server
+    - add other post data to posts table
 
-- add_post (user_id, post_id, auth_token)
-  - delete given user's given post along with its metadata(use soft delete).
+- delete_post (user_id, post_id, auth_token)
+    - delete given user's given post along with its metadata(use soft delete).
 
 - get_feed (user_id, count, offset, timestamp, auth_token)
-  - return top posts after the given timestamp of users followed by given user according to count and offset.
+    - return top posts after the given timestamp of users followed by given user according to count and offset.
 
 - get_user_posts (user_id, count, offset, auth_token)
-  - return posts of given user according to count and offset.
+    - return posts of given user according to count and offset 
 
 - post_like (user_id, post_id, auth_token)
-  - add given post id to given user's likes
+    - add given post id to given user's likes
 
 - post_unlike (user_id, post_id, auth_token)
-  - remove given post id from given user's likes
+    - remove given post id from given user's likes
 
-- post_comment (user_id, post_id, comment)
-  - add comment to given user's comment on given post
+- add_comment (user_id, post_id, comment)
+    - add comment to given user's comment on given post
+
+- delete_comment (user_id, comment_id)
+    - delete given user's comment of given comment id
 
 
 ## Feed
@@ -124,17 +133,16 @@ This system should be highly reliable and images should never be lost after uplo
 
 ### Distribute
 - Pull:
-  - In this, clients requests feed from server regularly or dynamically based on user actions (scroll, load more etc).
-  - But It doesn't handle new data very well.
-  - Users have to manually refresh to get new data.
-  - Also when client regularly requests data, most of the time, if there is no new data response would be empty .
+    - In this, clients requests feed from server regularly or dynamically based on user actions (scroll, load more etc).
+    - But It doesn't handle new data very well.
+    - Users have to manually refresh to get new data.
+    - Also when client regularly requests data, most of the time, if there is no new data response would be empty .
 - Push:
-  - In this, server can push new posts of a user to all his/her followers.
-  - long polling can be used.
-  - Problem with this is that when a user has a lot of followers, the server has to send a large number of requests.
+    - In this, server can push new posts of a user to all his/her followers.
+    - long polling can be used.
+    - Problem with this is that when a user has a lot of followers, the server has to send a large number of requests.
 - Hybrid
-  - We can use 'Pull' method for large followers users and 'Push' for others.
-
+    - We can use 'Pull' method for large followers users and 'Push' for others.
 
 
 ## Cache
